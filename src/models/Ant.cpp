@@ -19,16 +19,12 @@ int Ant::getID() {
 }
 
 // Implementação dos métodos
-void Ant::setLenght(int len) {
-	this->lenght = len;
-}
-
-int Ant::getLenght() {
-	return this->lenght;
-}
-
 int Ant::getRouteDistance() {
 	return this->routeDistance;
+}
+
+int Ant::getRouteSize() {
+	return this->route.size();
 }
 
 void Ant::incraseRouteDistance(int val) {
@@ -43,6 +39,15 @@ vector<int>* Ant::getRoute() {
 	return &this->route;
 }
 
-int Ant::getPosition(){
+int Ant::getPosition() {
 	return this->route[this->route.size() - 1];
+}
+
+bool Ant::checkVisitIn(int pos) {
+	for (int i = 0; i < this->route.size(); i++) {
+		if (this->route[i] == pos) {
+			return true;
+		}
+	}
+	return false;
 }
