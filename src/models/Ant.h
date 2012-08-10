@@ -15,18 +15,23 @@ using std::vector;
 class Ant {
 public:
 	// Construtor
-	Ant(int len);
-	// Metodos
+	Ant(int id, int len);
+	// Métodos
+	int getID();
 	void setLenght(int len);
 	int getLenght();
-	double getRouteDistance();
-	void incraseRouteDistance(double val);
+	int getRouteDistance();
+	void incraseRouteDistance(int val);
+	void addToRoute(int point);
+	vector<int>* getRoute();
+	int getPosition();
 private:
-	// variáveis
+	// Variáveis
+	int id;
 	int lenght;
-	double routeDistance;
-	vector<double> route;
-	vector<bool> tabuList;
+	int routeDistance;
+	vector<int> route;
+	vector<bool> tabooList;
 };
 
 #endif /* ANT_H_ */
