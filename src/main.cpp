@@ -43,6 +43,7 @@ void positioning_ants(vector<Ant*> *vec);
 void seed_initial_pheromone();
 void build_solutions(vector<Ant*> *vec);
 void check_best_solution(vector<Ant*> *vec);
+double calculate_quality(int solution, int best_solution);
 int get_random_number(int from, int to);
 void pheromone_evaporates();
 void update_pheromone();
@@ -111,6 +112,9 @@ void seed_initial_pheromone() {
 void build_solutions(vector<Ant*> *vec) {
 	// Para cada formiga
 	for (unsigned int i = 0; i < vec->size(); i++) {
+		if (vec->at(i)->getRouteSize() > 1) {
+			vec->at(i)->restartSearch();
+		}
 		// Enquanto não passar em todas as cidades
 		while (vec->at(i)->getRouteSize() < CITY_AMOUNT) {
 			int position = vec->at(i)->getPosition();
@@ -178,7 +182,16 @@ void check_best_solution(vector<Ant*> *vec) {
 				bestRoute = vec->at(i)->getRoute();
 			}
 		}
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			double quality = calculate_quality(vec->at(i)->getRouteDistance(),
+					bestDistance);
+			vec->at(i)->setQuality(quality);
+		}
 	}
+}
+
+double calculate_quality(int solution, int best_solution) {
+	return (double) (100 * solution) / (double) best_solution;
 }
 
 void pheromone_evaporates() {
@@ -193,14 +206,11 @@ void pheromone_evaporates() {
 void update_pheromone(vector<Ant*> *vec) {
 	pheromone_evaporates();
 	for (int i = 0; i < POPULATION_SIZE; i++) {
-		double pheromone_to_sum = POSITIVE_CONST
-				/ vec->at(i)->getRouteDistance();
+		double pheromone_to_sum = POSITIVE_CONTS / vec->at(i)->getQuality();
 		vector<int>* route = vec->at(i)->getRoute();
 		for (int j = 0; j < vec->at(i)->getRouteSize(); j++) {
-			int lower = route[j];
-			int uper = route[j + 1];
-			// TO-DO
-			// TO-DO path quality
+			int lower = route->at(j);
+			int uper = route->at(j + 1);
 			pheromone_links[lower][uper] += pheromone_to_sum;
 		}
 	}

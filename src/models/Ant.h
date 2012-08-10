@@ -18,10 +18,13 @@ public:
 	Ant(int id, int len);
 	// Métodos
 	int getID();
+	double getQuality();
+	void setQuality(double q);
 	int getRouteDistance();
 	int getRouteSize();
 	void incraseRouteDistance(int val);
 	void addToRoute(int point);
+	void restartSearch();
 	vector<int>* getRoute();
 	int getPosition();
 	bool checkVisitIn(int pos);
@@ -29,6 +32,7 @@ private:
 	// Variáveis
 	int id;
 	int routeDistance;
+	double quality;
 	vector<int> route;
 	vector<bool> tabooList;
 };
