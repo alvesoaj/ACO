@@ -308,13 +308,13 @@ string number_to_String(double n) {
 double calculate_metrics(vector<Ant*> *vec) {
 	// Calcular a média
 	int sum = 0;
-	for (unsigned int i = 0; i < vec->size(); i++) {
+	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
 		sum += vec->at(i)->getRouteDistance();
 	}
 	average = (double) sum / (double) POPULATION_SIZE;
 	// Calcuar a variância
 	sum = 0;
-	for (unsigned int i = 0; i < vec->size(); i++) {
+	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
 		sum += pow(vec->at(i)->getRouteDistance() - average, 2);
 	}
 	variance = (double) sum / (double) POPULATION_SIZE;
