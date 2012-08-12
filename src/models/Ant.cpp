@@ -43,15 +43,15 @@ void Ant::addToRoute(int point) {
 	this->route.push_back(point);
 }
 void Ant::restartSearch() {
-	for (unsigned int i = 1; i < this->route.size(); i++) {
-		this->route.pop_back();
-	}
+	vector<int> newRoute;
+	newRoute.push_back(this->route.at(0));
+	this->route = newRoute;
 	this->routeDistance = 0;
 	this->quality = 0;
 }
 
-vector<int>* Ant::getRoute() {
-	return &this->route;
+vector<int> Ant::getRoute() {
+	return this->route;
 }
 
 int Ant::getPosition() {

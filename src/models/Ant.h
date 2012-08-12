@@ -25,7 +25,7 @@ public:
 	void incraseRouteDistance(int val);
 	void addToRoute(int point);
 	void restartSearch();
-	vector<int>* getRoute();
+	vector<int> getRoute();
 	int getPosition();
 	bool checkVisitIn(int pos);
 private:
@@ -34,7 +34,6 @@ private:
 	int routeDistance;
 	double quality;
 	vector<int> route;
-	vector<bool> tabooList;
 };
 
 #endif /* ANT_H_ */

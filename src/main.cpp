@@ -24,7 +24,7 @@
 #define BETA 1
 #define MAX_INTERATIONS 10
 #define EVAPORATION_RATE 0.5
-#define POSITIVE_CONTS 2
+#define POSITIVE_CONTS 5
 
 using namespace std;
 
@@ -36,7 +36,7 @@ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
 		INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
 		{ 1, 8, 3, 4, 3, INVALID } };
 int bestDistance = INVALID;
-vector<int>* bestRoute;
+vector<int> bestRoute;
 
 void initialize_ants(vector<Ant*> *vec);
 void positioning_ants(vector<Ant*> *vec);
@@ -47,16 +47,13 @@ double calculate_quality(int solution, int best_solution);
 int get_random_number(int from, int to);
 void pheromone_evaporates();
 void update_pheromone(vector<Ant*> *vec);
-void print_route(int id, int distance, vector<int> *vec);
+void print_route(int id, int distance, vector<int> vec);
 void print_pheromone();
 string number_to_String(double n);
-void refactor_distances();
 
 int main(int argc, char *argv[]) {
 	// Inicializando o gerador de números randômicos com um seed temporal
 	srand(time(0));
-	// invertendo os pesos do caminho
-	refactor_distances();
 	// Inicializar o contador de interações
 	int interation = 0;
 	// Inicializando os objetos formigas
@@ -148,6 +145,8 @@ void build_solutions(vector<Ant*> *vec) {
 					} else {
 						transition_probability[j] = 0;
 					}
+				} else {
+					transition_probability[j] = 0;
 				}
 			}
 			// fazendo a roleta
@@ -161,7 +160,6 @@ void build_solutions(vector<Ant*> *vec) {
 					major += transition_probability[j];
 					if (roulette >= minor and roulette <= major) {
 						vec->at(i)->addToRoute(j);
-						cout << distance_links[position][j] << endl;
 						vec->at(i)->incraseRouteDistance(
 								distance_links[position][j]);
 						break;
@@ -213,10 +211,10 @@ void update_pheromone(vector<Ant*> *vec) {
 	pheromone_evaporates();
 	for (int i = 0; i < POPULATION_SIZE; i++) {
 		double pheromone_to_sum = POSITIVE_CONTS / vec->at(i)->getQuality();
-		vector<int>* route = vec->at(i)->getRoute();
+		vector<int> route = vec->at(i)->getRoute();
 		for (int j = 0; j < (vec->at(i)->getRouteSize() - 1); j++) {
-			int lower = route->at(j);
-			int uper = route->at(j + 1);
+			int lower = route.at(j);
+			int uper = route.at(j + 1);
 			if (pheromone_links[lower][uper] != INVALID) {
 				pheromone_links[lower][uper] += pheromone_to_sum;
 			}
@@ -232,11 +230,11 @@ int get_random_number(int from, int to) {
 	}
 }
 
-void print_route(int id, int distance, vector<int> *vec) {
+void print_route(int id, int distance, vector<int> vec) {
 	string temp = "Rota da formiga " + number_to_String(id) + " : ";
-	for (unsigned int i = 0; i < vec->size(); i++) {
-		temp += number_to_String(vec->at(i));
-		if ((i + 1) != vec->size()) {
+	for (unsigned int i = 0; i < vec.size(); i++) {
+		temp += number_to_String(vec.at(i));
+		if ((i + 1) != vec.size()) {
 			temp += ", ";
 		}
 	}
@@ -269,24 +267,4 @@ string number_to_String(double n) {
 	stringstream out;
 	out << n;
 	return out.str();
-}
-
-void refactor_distances() {
-	int major = 0;
-	for (int i = 0; i < CITY_AMOUNT; i++) {
-		for (int j = 0; j < CITY_AMOUNT; j++) {
-			if (distance_links[i][j] > major and distance_links[i][j]
-					!= INVALID) {
-				major = distance_links[i][j];
-			}
-		}
-	}
-	major += 1;
-	for (int i = 0; i < CITY_AMOUNT; i++) {
-		for (int j = 0; j < CITY_AMOUNT; j++) {
-			if (distance_links[i][j] != INVALID) {
-				distance_links[i][j] = major - distance_links[i][j];
-			}
-		}
-	}
 }
