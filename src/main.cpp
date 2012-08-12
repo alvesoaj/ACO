@@ -18,13 +18,14 @@
 // Constantes
 #define INVALID -1
 #define CITY_AMOUNT 6
-#define POPULATION_SIZE 3
+#define POPULATION_SIZE 30
 #define PHEROMONE_RATE 0.1
 #define ALFA 1
 #define BETA 1
-#define MAX_INTERATIONS 10
+#define MAX_INTERATIONS 50
 #define EVAPORATION_RATE 0.5
 #define POSITIVE_CONTS 5
+#define GREATER_DISTANCE 12
 
 using namespace std;
 
@@ -58,7 +59,7 @@ void print_route(int id, int distance, vector<int> vec);
 void print_pheromone();
 string number_to_String(double n);
 void print_result();
-double calculate_metrics(vector<Ant*> *vec);
+void calculate_metrics(vector<Ant*> *vec);
 
 int main(int argc, char *argv[]) {
 	// Inicializando o gerador de números randômicos com um seed temporal
@@ -138,7 +139,10 @@ void build_solutions(vector<Ant*> *vec) {
 							and distance_links[position][j] >= 0) {
 						link_rate_sum
 								+= pow(pheromone_links[position][j], ALFA)
-										* pow(distance_links[position][j], BETA);
+										* pow(
+												GREATER_DISTANCE
+														- distance_links[position][j],
+												BETA);
 					}
 				}
 			}
@@ -150,8 +154,8 @@ void build_solutions(vector<Ant*> *vec) {
 							and distance_links[position][j] >= 0) {
 						transition_probability[j] = (pow(
 								pheromone_links[position][j], ALFA) * pow(
-								distance_links[position][j], BETA))
-								/ link_rate_sum;
+								GREATER_DISTANCE - distance_links[position][j],
+								BETA)) / link_rate_sum;
 					} else {
 						transition_probability[j] = 0;
 					}
@@ -305,7 +309,7 @@ string number_to_String(double n) {
 	return out.str();
 }
 
-double calculate_metrics(vector<Ant*> *vec) {
+void calculate_metrics(vector<Ant*> *vec) {
 	// Calcular a média
 	int sum = 0;
 	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
