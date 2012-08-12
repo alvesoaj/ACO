@@ -36,7 +36,14 @@ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
 		INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
 		{ 1, 8, 3, 4, 3, INVALID } };
 int bestDistance = INVALID;
+int worseDistance = INVALID;
+double bestSolution = 1000000.0;
+double worseSolution = 0.0;
 vector<int> bestRoute;
+vector<int> worseRoute;
+double average = 0.0;
+double variance = 0.0;
+double standard_deviation = 0.0;
 
 void initialize_ants(vector<Ant*> *vec);
 void positioning_ants(vector<Ant*> *vec);
@@ -50,6 +57,8 @@ void update_pheromone(vector<Ant*> *vec);
 void print_route(int id, int distance, vector<int> vec);
 void print_pheromone();
 string number_to_String(double n);
+void print_result();
+double calculate_metrics(vector<Ant*> *vec);
 
 int main(int argc, char *argv[]) {
 	// Inicializando o gerador de números randômicos com um seed temporal
@@ -71,12 +80,13 @@ int main(int argc, char *argv[]) {
 			print_route(ants[i]->getID(), ants[i]->getRouteDistance(),
 					ants[i]->getRoute());
 		}
-		print_pheromone();
+		// Imprimindo a matriz de feromônio
+		// print_pheromone();
 		interation++;
 	}
 
-	cout << "Melhor resultado:" << endl;
-	print_route(0, bestDistance, bestRoute);
+	// Imprimindo o resultado final
+	print_result();
 
 	//cin.get(); // aguarda por um novo caracter para então encerrar a aplicação
 
@@ -174,19 +184,30 @@ void build_solutions(vector<Ant*> *vec) {
 
 void check_best_solution(vector<Ant*> *vec) {
 	if (vec->size() > 0) {
-		if (bestDistance == INVALID) {
+		if (bestDistance == INVALID and worseDistance == INVALID) {
 			bestDistance = vec->at(0)->getRouteDistance();
 			bestRoute = vec->at(0)->getRoute();
+
+			worseDistance = vec->at(POPULATION_SIZE - 1)->getRouteDistance();
+			worseRoute = vec->at(POPULATION_SIZE - 1)->getRoute();
 		}
 		for (int i = 0; i < POPULATION_SIZE; i++) {
 			if (vec->at(i)->getRouteDistance() < bestDistance) {
 				bestDistance = vec->at(i)->getRouteDistance();
 				bestRoute = vec->at(i)->getRoute();
+			} else if (vec->at(i)->getRouteDistance() > worseDistance) {
+				worseDistance = vec->at(i)->getRouteDistance();
+				worseRoute = vec->at(i)->getRoute();
 			}
 		}
 		for (int i = 0; i < POPULATION_SIZE; i++) {
 			double quality = calculate_quality(vec->at(i)->getRouteDistance(),
 					bestDistance);
+			if (quality < bestSolution) {
+				bestSolution = quality;
+			} else if (quality > worseSolution) {
+				worseSolution = quality;
+			}
 			vec->at(i)->setQuality(quality);
 		}
 	}
@@ -263,8 +284,40 @@ void print_pheromone() {
 	cout << temp << endl;
 }
 
+void print_result() {
+	cout << "Pior resultado:" << endl;
+	cout << "f(x):" << worseSolution << endl;
+	print_route(0, worseDistance, worseRoute);
+
+	cout << "Melhor resultado:" << endl;
+	cout << "f(x):" << bestSolution << endl;
+	print_route(0, bestDistance, bestRoute);
+
+	calculate_metrics(&ants);
+	cout << "Média:" << average << endl;
+	cout << "Variância:" << variance << endl;
+	cout << "Desvio padrão:" << standard_deviation << endl;
+}
+
 string number_to_String(double n) {
 	stringstream out;
 	out << n;
 	return out.str();
+}
+
+double calculate_metrics(vector<Ant*> *vec) {
+	// Calcular a média
+	int sum = 0;
+	for (unsigned int i = 0; i < vec->size(); i++) {
+		sum += vec->at(i)->getRouteDistance();
+	}
+	average = (double) sum / (double) POPULATION_SIZE;
+	// Calcuar a variância
+	sum = 0;
+	for (unsigned int i = 0; i < vec->size(); i++) {
+		sum += pow(vec->at(i)->getRouteDistance() - average, 2);
+	}
+	variance = (double) sum / (double) POPULATION_SIZE;
+	// Calculando o desvio padrão
+	standard_deviation = pow(variance, 0.5);
 }
