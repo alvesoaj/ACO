@@ -24,7 +24,7 @@
 #define BETA 1
 #define MAX_INTERATIONS 10
 #define EVAPORATION_RATE 0.5
-#define POSITIVE_CONTS 3
+#define POSITIVE_CONTS 2
 
 using namespace std;
 
@@ -33,7 +33,7 @@ vector<Ant*> ants;
 double pheromone_links[CITY_AMOUNT][CITY_AMOUNT];
 int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
 		7, INVALID, 2, 8, 10, 8 }, { 4, 2, INVALID, 9, 9, 3 }, { 3, 8, 9,
-		INVALID, 5, 4 }, { 11, 10, 9, 1, INVALID, 3 },
+		INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
 		{ 1, 8, 3, 4, 3, INVALID } };
 int bestDistance = INVALID;
 vector<int>* bestRoute;
@@ -46,8 +46,9 @@ void check_best_solution(vector<Ant*> *vec);
 double calculate_quality(int solution, int best_solution);
 int get_random_number(int from, int to);
 void pheromone_evaporates();
-void update_pheromone();
+void update_pheromone(vector<Ant*> *vec);
 void print_route(int id, int distance, vector<int> *vec);
+void print_pheromone();
 string number_to_String(double n);
 void refactor_distances();
 
@@ -68,10 +69,12 @@ int main(int argc, char *argv[]) {
 	while (interation < MAX_INTERATIONS) {
 		build_solutions(&ants);
 		check_best_solution(&ants);
+		update_pheromone(&ants);
 		for (unsigned int i = 0; i < ants.size(); i++) {
 			print_route(ants[i]->getID(), ants[i]->getRouteDistance(),
 					ants[i]->getRoute());
 		}
+		print_pheromone();
 		interation++;
 	}
 
@@ -158,6 +161,7 @@ void build_solutions(vector<Ant*> *vec) {
 					major += transition_probability[j];
 					if (roulette >= minor and roulette <= major) {
 						vec->at(i)->addToRoute(j);
+						cout << distance_links[position][j] << endl;
 						vec->at(i)->incraseRouteDistance(
 								distance_links[position][j]);
 						break;
@@ -197,8 +201,10 @@ double calculate_quality(int solution, int best_solution) {
 void pheromone_evaporates() {
 	for (int i = 0; i < CITY_AMOUNT; i++) {
 		for (int j = 0; j < CITY_AMOUNT; j++) {
-			pheromone_links[i][j] = (1 - EVAPORATION_RATE)
-					* pheromone_links[i][j];
+			if (pheromone_links[i][j] != INVALID) {
+				pheromone_links[i][j] = (1 - EVAPORATION_RATE)
+						* pheromone_links[i][j];
+			}
 		}
 	}
 }
@@ -208,10 +214,12 @@ void update_pheromone(vector<Ant*> *vec) {
 	for (int i = 0; i < POPULATION_SIZE; i++) {
 		double pheromone_to_sum = POSITIVE_CONTS / vec->at(i)->getQuality();
 		vector<int>* route = vec->at(i)->getRoute();
-		for (int j = 0; j < vec->at(i)->getRouteSize(); j++) {
+		for (int j = 0; j < (vec->at(i)->getRouteSize() - 1); j++) {
 			int lower = route->at(j);
 			int uper = route->at(j + 1);
-			pheromone_links[lower][uper] += pheromone_to_sum;
+			if (pheromone_links[lower][uper] != INVALID) {
+				pheromone_links[lower][uper] += pheromone_to_sum;
+			}
 		}
 	}
 }
@@ -233,6 +241,27 @@ void print_route(int id, int distance, vector<int> *vec) {
 		}
 	}
 	temp += ". Tamanho: " + number_to_String(distance) + "\n";
+	cout << temp << endl;
+}
+
+void print_pheromone() {
+	string temp = "Taxas de feromônio:";
+	temp += "\n{";
+	for (int i = 0; i < CITY_AMOUNT; i++) {
+		temp += "{";
+		for (int j = 0; j < CITY_AMOUNT; j++) {
+			temp += number_to_String(pheromone_links[i][j]);
+			if ((j + 1) != CITY_AMOUNT) {
+				temp += ", ";
+			}
+		}
+		if ((i + 1) != CITY_AMOUNT) {
+			temp += "}, ";
+		} else {
+			temp += "}";
+		}
+	}
+	temp += "}\n";
 	cout << temp << endl;
 }
 
