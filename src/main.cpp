@@ -150,7 +150,7 @@ void build_solutions(vector<Ant*> *vec) {
 				}
 			}
 			// fazendo a roleta
-			double roulette = (double) get_random_number(0, 10000) / 10000.0;
+			double roulette = (double) get_random_number(0, 100) / 100.0;
 			double minor = 0;
 			double major = 0;
 			// Selecionando o próximo nó
@@ -193,7 +193,7 @@ void check_best_solution(vector<Ant*> *vec) {
 }
 
 double calculate_quality(int solution, int best_solution) {
-	return (double) (100 * solution) / (double) best_solution;
+	return (double) (1 * solution) / (double) best_solution;
 }
 
 void pheromone_evaporates() {
