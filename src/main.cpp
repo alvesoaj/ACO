@@ -17,25 +17,41 @@
 
 // Constantes
 #define INVALID -1
-#define CITY_AMOUNT 6
+#define CITY_AMOUNT 14
 #define POPULATION_SIZE 30
 #define PHEROMONE_RATE 0.1
 #define ALFA 1
 #define BETA 1
 #define MAX_INTERATIONS 50
-#define EVAPORATION_RATE 0.5
+#define EVAPORATION_RATE 0.6
 #define POSITIVE_CONTS 5
-#define GREATER_DISTANCE 12
 
 using namespace std;
 
 // Variáveis
 vector<Ant*> ants;
 double pheromone_links[CITY_AMOUNT][CITY_AMOUNT];
-int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
-		7, INVALID, 2, 8, 10, 8 }, { 4, 2, INVALID, 9, 9, 3 }, { 3, 8, 9,
-		INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
-		{ 1, 8, 3, 4, 3, INVALID } };
+/*
+ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
+ 7, INVALID, 2, 8, 10, 8 }, { 4, 2, INVALID, 9, 9, 3 }, { 3, 8, 9,
+ INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
+ { 1, 8, 3, 4, 3, INVALID } };
+ */
+int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 11, 20, 27, 40, 43,
+		39, 28, 18, 10, 18, 30, 30, 32 }, { 11, INVALID, 9, 16, 29, 32, 28, 19,
+		11, 4, 17, 23, 21, 24 }, { 20, 9, INVALID, 7, 20, 22, 19, 15, 10, 11,
+		21, 21, 13, 18 }, { 27, 16, 7, INVALID, 13, 16, 12, 13, 13, 18, 26, 21,
+		11, 17 },
+		{ 40, 29, 20, 13, INVALID, 3, 2, 21, 25, 31, 38, 27, 16, 20 }, { 43,
+				32, 22, 16, 3, INVALID, 4, 23, 28, 33, 41, 30, 17, 20 }, { 39,
+				28, 19, 12, 2, 4, INVALID, 22, 25, 29, 38, 28, 13, 17 }, { 28,
+				19, 15, 13, 21, 23, 22, INVALID, 9, 22, 18, 7, 25, 30 }, { 18,
+				11, 10, 13, 25, 28, 25, 9, INVALID, 13, 12, 12, 23, 28 }, { 10,
+				4, 11, 18, 31, 33, 29, 22, 13, INVALID, 20, 27, 20, 23 }, { 18,
+				17, 21, 26, 38, 41, 38, 18, 12, 20, INVALID, 15, 35, 39 }, {
+				30, 23, 21, 21, 27, 30, 28, 7, 12, 27, 15, INVALID, 31, 37 }, {
+				30, 21, 13, 11, 16, 17, 13, 25, 23, 20, 35, 31, INVALID, 5 }, {
+				32, 24, 18, 17, 20, 20, 17, 30, 28, 23, 39, 37, 5, INVALID } };
 int bestDistance = INVALID;
 int worseDistance = INVALID;
 double bestSolution = 1000000.0;
@@ -45,6 +61,7 @@ vector<int> worseRoute;
 double average = 0.0;
 double variance = 0.0;
 double standard_deviation = 0.0;
+int greater_distance = INVALID;
 
 void initialize_ants(vector<Ant*> *vec);
 void positioning_ants(vector<Ant*> *vec);
@@ -60,6 +77,7 @@ void print_pheromone();
 string number_to_String(double n);
 void print_result();
 void calculate_metrics(vector<Ant*> *vec);
+void get_greater_distance();
 
 int main(int argc, char *argv[]) {
 	// Inicializando o gerador de números randômicos com um seed temporal
@@ -72,6 +90,8 @@ int main(int argc, char *argv[]) {
 	positioning_ants(&ants);
 	// Configurando as concetrações iniciais de feromônio
 	seed_initial_pheromone();
+	// Pegando a maior distância somado com 1
+	get_greater_distance();
 
 	while (interation < MAX_INTERATIONS) {
 		build_solutions(&ants);
@@ -140,7 +160,7 @@ void build_solutions(vector<Ant*> *vec) {
 						link_rate_sum
 								+= pow(pheromone_links[position][j], ALFA)
 										* pow(
-												GREATER_DISTANCE
+												greater_distance
 														- distance_links[position][j],
 												BETA);
 					}
@@ -154,7 +174,7 @@ void build_solutions(vector<Ant*> *vec) {
 							and distance_links[position][j] >= 0) {
 						transition_probability[j] = (pow(
 								pheromone_links[position][j], ALFA) * pow(
-								GREATER_DISTANCE - distance_links[position][j],
+								greater_distance - distance_links[position][j],
 								BETA)) / link_rate_sum;
 					} else {
 						transition_probability[j] = 0;
@@ -324,4 +344,15 @@ void calculate_metrics(vector<Ant*> *vec) {
 	variance = (double) sum / (double) POPULATION_SIZE;
 	// Calculando o desvio padrão
 	standard_deviation = pow(variance, 0.5);
+}
+
+void get_greater_distance() {
+	for (int i = 0; i < CITY_AMOUNT; i++) {
+		for (int j = 0; j < CITY_AMOUNT; j++) {
+			if (distance_links[i][j] > greater_distance) {
+				greater_distance = distance_links[i][j];
+			}
+		}
+	}
+	greater_distance += 1;
 }
