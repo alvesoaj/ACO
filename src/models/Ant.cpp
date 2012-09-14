@@ -8,10 +8,14 @@
 #include "Ant.h"
 
 // Implementação do construtor
-Ant::Ant(int id, int len) {
+Ant::Ant() {
+}
+
+Ant::Ant(int id, int trailMode) {
 	this->id = id;
 	this->routeDistance = 0;
 	this->quality = 0;
+	this->trailMode = trailMode;
 }
 
 int Ant::getID() {
@@ -24,6 +28,22 @@ double Ant::getQuality() {
 
 void Ant::setQuality(double q) {
 	this->quality = q;
+}
+
+int Ant::getTrailMode() {
+	return this->trailMode;
+}
+
+void Ant::setTrailMode(int tm) {
+	this->trailMode = tm;
+}
+
+int Ant::getLastTrail() {
+	return this->lastTrail;
+}
+
+void Ant::setLastTrail(int lt) {
+	this->lastTrail = lt;
 }
 
 // Implementação dos métodos
