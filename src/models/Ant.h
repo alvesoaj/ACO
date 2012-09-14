@@ -15,8 +15,9 @@ using std::vector;
 class Ant {
 public:
 	// Constantes
-	const int ALTERNATE = 0;
-	const int RANDOM = 1;
+	const int IDLE = 0;
+	const int ALTERNATE = 1;
+	const int RANDOM = 2;
 	const int COST = 100;
 	const int COVERAGE = -100;
 

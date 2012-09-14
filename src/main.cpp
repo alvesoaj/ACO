@@ -35,11 +35,11 @@ vector<Ant*> ants;
 double pheromone_cost[CITY_AMOUNT][CITY_AMOUNT];
 double pheromone_coverage[CITY_AMOUNT][CITY_AMOUNT];
 int distance_links[CITY_AMOUNT][CITY_AMOUNT] = {
-		{ INVALID, 1, 1, 1, 1, 1, 1, 1 }, { 1, INVALID, 1, 1, 1, 1, 1, 1 }, { 1,
-				1, INVALID, 1, 1, 1, 1, 1 }, { 1, 1, 1, INVALID, 1, 1, 1, 1 }, {
-				1, 1, 1, 1, INVALID, 1, 1, 1 },
-		{ 1, 1, 1, 1, 1, INVALID, 1, 1 }, { 1, 1, 1, 1, 1, 1, INVALID, 1 }, { 1,
-				1, 1, 1, 1, 1, 1, INVALID } };
+		{ INVALID, 1, 1, 1, 1, 1, 1, 1 }, { 1, INVALID, 1, 1, 1, 1, 1, 1 }, {
+				1, 1, INVALID, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, INVALID, 1, 1, 1, 1 }, { 1, 1, 1, 1, INVALID, 1, 1, 1 }, {
+				1, 1, 1, 1, 1, INVALID, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, INVALID, 1 }, { 1, 1, 1, 1, 1, 1, 1, INVALID } };
 int rate[CITY_AMOUNT] = { 2, 8, 4, 6, 3, 4, 6, 1 };
 int bestDistance = INVALID;
 int worseDistance = INVALID;
@@ -144,6 +144,7 @@ void build_solutions(vector<Ant*> *vec) {
 	// Para cada formiga
 	for (unsigned int i = 0; i < vec->size(); i++) {
 		// reiniciando a formiga para a busca
+		int trail = reference_ant.IDLE;
 		vec->at(i)->restartSearch();
 
 		// Enquanto não passar em todas as cidades
@@ -151,9 +152,9 @@ void build_solutions(vector<Ant*> *vec) {
 			int position = vec->at(i)->getPosition();
 			double transition_probability[CITY_AMOUNT];
 			double link_rate_sum = 0;
-			int trail;
 
-			if (vec->at(i)->getTrailMode() == reference_ant.RANDOM) {
+			if (trail == reference_ant.IDLE or vec->at(i)->getTrailMode()
+					== reference_ant.RANDOM) {
 				int r = get_random_number(1, 100);
 				if (r >= 1 and r <= 50) {
 					trail = reference_ant.COST;
@@ -196,9 +197,8 @@ void build_solutions(vector<Ant*> *vec) {
 						if (pheromone_cost[position][j] >= 0
 								and distance_links[position][j] >= 0) {
 							transition_probability[j] = (pow(
-									pheromone_cost[position][j], ALFA)
-									* pow(rate[position], BETA))
-									/ link_rate_sum;
+									pheromone_cost[position][j], ALFA) * pow(
+									rate[position], BETA)) / link_rate_sum;
 						} else {
 							transition_probability[j] = 0;
 						}
