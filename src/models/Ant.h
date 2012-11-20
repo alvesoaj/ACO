@@ -14,24 +14,12 @@ using std::vector;
 
 class Ant {
 public:
-	// Constantes
-	const int IDLE = 0;
-	const int ALTERNATE = 1;
-	const int RANDOM = 2;
-	const int COST = 100;
-	const int COVERAGE = -100;
-
 	// Construtor
-	Ant();
-	Ant(int id, int trail);
+	Ant(int id, int len);
 	// Métodos
 	int getID();
 	double getQuality();
 	void setQuality(double q);
-	int getTrailMode();
-	void setTrailMode(int tm);
-	int getLastTrail();
-	void setLastTrail(int lt);
 	int getRouteDistance();
 	int getRouteSize();
 	void incraseRouteDistance(int val);
@@ -40,14 +28,11 @@ public:
 	vector<int> getRoute();
 	int getPosition();
 	bool checkVisitIn(int pos);
-
 private:
 	// Variáveis
 	int id;
 	int routeDistance;
 	double quality;
-	int trailMode;
-	int lastTrail;
 	vector<int> route;
 };
 

@@ -14,12 +14,11 @@
 #include <ctime>  // Para usar o time() e fornecer um bom seed para o random
 #include <cstdlib> // Para gerar numeros randômicos
 #include "models/Ant.h"
-#include "models/Monitor.h"
 
 // Constantes
 #define INVALID -1
 // #define CITY_AMOUNT 6
-#define CITY_AMOUNT 8
+#define CITY_AMOUNT 14
 #define POPULATION_SIZE 30
 #define PHEROMONE_RATE 0.1
 #define ALFA 1
@@ -32,15 +31,28 @@ using namespace std;
 
 // Variáveis
 vector<Ant*> ants;
-double pheromone_cost[CITY_AMOUNT][CITY_AMOUNT];
-double pheromone_coverage[CITY_AMOUNT][CITY_AMOUNT];
-int distance_links[CITY_AMOUNT][CITY_AMOUNT] = {
-		{ INVALID, 1, 1, 1, 1, 1, 1, 1 }, { 1, INVALID, 1, 1, 1, 1, 1, 1 }, {
-				1, 1, INVALID, 1, 1, 1, 1, 1 },
-		{ 1, 1, 1, INVALID, 1, 1, 1, 1 }, { 1, 1, 1, 1, INVALID, 1, 1, 1 }, {
-				1, 1, 1, 1, 1, INVALID, 1, 1 },
-		{ 1, 1, 1, 1, 1, 1, INVALID, 1 }, { 1, 1, 1, 1, 1, 1, 1, INVALID } };
-int rate[CITY_AMOUNT] = { 2, 8, 4, 6, 3, 4, 6, 1 };
+double pheromone_links[CITY_AMOUNT][CITY_AMOUNT];
+/*
+ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
+ 7, INVALID, 2, 8, 10, 8 }, { 4, 2, INVALID, 9, 9, 3 }, { 3, 8, 9,
+ INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
+ { 1, 8, 3, 4, 3, INVALID } };
+ */
+int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 11, 20, 27, 40, 43,
+		39, 28, 18, 10, 18, 30, 30, 32 }, { 11, INVALID, 9, 16, 29, 32, 28, 19,
+		11, 4, 17, 23, 21, 24 }, { 20, 9, INVALID, 7, 20, 22, 19, 15, 10, 11,
+		21, 21, 13, 18 }, { 27, 16, 7, INVALID, 13, 16, 12, 13, 13, 18, 26, 21,
+		11, 17 },
+		{ 40, 29, 20, 13, INVALID, 3, 2, 21, 25, 31, 38, 27, 16, 20 }, { 43,
+				32, 22, 16, 3, INVALID, 4, 23, 28, 33, 41, 30, 17, 20 }, { 39,
+				28, 19, 12, 2, 4, INVALID, 22, 25, 29, 38, 28, 13, 17 }, { 28,
+				19, 15, 13, 21, 23, 22, INVALID, 9, 22, 18, 7, 25, 30 }, { 18,
+				11, 10, 13, 25, 28, 25, 9, INVALID, 13, 12, 12, 23, 28 }, { 10,
+				4, 11, 18, 31, 33, 29, 22, 13, INVALID, 20, 27, 20, 23 }, { 18,
+				17, 21, 26, 38, 41, 38, 18, 12, 20, INVALID, 15, 35, 39 }, {
+				30, 23, 21, 21, 27, 30, 28, 7, 12, 27, 15, INVALID, 31, 37 }, {
+				30, 21, 13, 11, 16, 17, 13, 25, 23, 20, 35, 31, INVALID, 5 }, {
+				32, 24, 18, 17, 20, 20, 17, 30, 28, 23, 39, 37, 5, INVALID } };
 int bestDistance = INVALID;
 int worseDistance = INVALID;
 double bestSolution = 1000000000.0;
@@ -51,10 +63,9 @@ double average = 0.0;
 double variance = 0.0;
 double standard_deviation = 0.0;
 int greater_distance = INVALID;
-Ant reference_ant;
 
 void initialize_ants(vector<Ant*> *vec);
-void positioning_ants(vector<Ant*> *vec, bool random);
+void positioning_ants(vector<Ant*> *vec);
 void seed_initial_pheromone(bool random, double pheromone_rate, int intervals);
 void build_solutions(vector<Ant*> *vec);
 void check_best_solution(vector<Ant*> *vec);
@@ -76,10 +87,11 @@ int main(int argc, char *argv[]) {
 	int interation = 0;
 	// Inicializando os objetos formigas
 	initialize_ants(&ants);
-	// Posicionando as formigas
-	positioning_ants(&ants, false);
+	// Posicionando as formigas aleatoriamente
+	positioning_ants(&ants);
 	// Configurando as concetrações iniciais de feromônio
 	seed_initial_pheromone(false, PHEROMONE_RATE, 0);
+	// seed_initial_pheromone(true, PHEROMONE_RATE, 10);
 	// Pegando a maior distância somado com 1
 	get_greater_distance();
 
@@ -106,17 +118,14 @@ int main(int argc, char *argv[]) {
 
 void initialize_ants(vector<Ant*> *vec) {
 	for (int i = 0; i < POPULATION_SIZE; i++) {
-		Ant *a = new Ant((i + 1), reference_ant.ALTERNATE);
+		Ant *a = new Ant((i + 1), CITY_AMOUNT);
 		vec->push_back(a);
 	}
 }
 
-void positioning_ants(vector<Ant*> *vec, bool random) {
+void positioning_ants(vector<Ant*> *vec) {
 	for (unsigned int i = 0; i < vec->size(); i++) {
-		int random_city = 0;
-		if (random) {
-			random_city = get_random_number(0, (CITY_AMOUNT - 1));
-		}
+		int random_city = get_random_number(0, (CITY_AMOUNT - 1));
 		vec->at(i)->addToRoute(random_city);
 	}
 }
@@ -130,11 +139,9 @@ void seed_initial_pheromone(bool random, double pheromone_rate, int intervals) {
 					int rn = get_random_number(1, intervals);
 					pheromone_seed = pheromone_rate / rn;
 				}
-				pheromone_cost[i][j] = pheromone_seed;
-				pheromone_coverage[i][j] = pheromone_seed;
+				pheromone_links[i][j] = pheromone_seed;
 			} else {
-				pheromone_cost[i][j] = INVALID;
-				pheromone_coverage[i][j] = INVALID;
+				pheromone_links[i][j] = INVALID;
 			}
 		}
 	}
@@ -143,48 +150,26 @@ void seed_initial_pheromone(bool random, double pheromone_rate, int intervals) {
 void build_solutions(vector<Ant*> *vec) {
 	// Para cada formiga
 	for (unsigned int i = 0; i < vec->size(); i++) {
-		// reiniciando a formiga para a busca
-		int trail = reference_ant.IDLE;
-		vec->at(i)->restartSearch();
-
+		if (vec->at(i)->getRouteSize() > 1) {
+			vec->at(i)->restartSearch();
+		}
 		// Enquanto não passar em todas as cidades
 		while (vec->at(i)->getRouteSize() < CITY_AMOUNT) {
 			int position = vec->at(i)->getPosition();
 			double transition_probability[CITY_AMOUNT];
 			double link_rate_sum = 0;
-
-			if (trail == reference_ant.IDLE or vec->at(i)->getTrailMode()
-					== reference_ant.RANDOM) {
-				int r = get_random_number(1, 100);
-				if (r >= 1 and r <= 50) {
-					trail = reference_ant.COST;
-				} else {
-					trail = reference_ant.COVERAGE;
-				}
-			} else {
-				trail = vec->at(i)->getLastTrail() * -1;
-			}
-
 			// Somando as taxas de feromonio e heuristica
 			for (int j = 0; j < CITY_AMOUNT; j++) {
 				// Se a cidade já visitada, não entrar na análise
 				if (vec->at(i)->checkVisitIn(j) == false) {
-					switch (trail) {
-					case reference_ant.COST:
-						if (pheromone_cost[position][j] >= 0
-								and distance_links[position][j] >= 0) {
-							link_rate_sum += pow(pheromone_cost[position][j],
-									ALFA) * pow(rate[position], BETA);
-						}
-						break;
-					case reference_ant.COVERAGE:
-						if (pheromone_coverage[position][j] >= 0
-								and distance_links[position][j] >= 0) {
-							link_rate_sum += pow(
-									pheromone_coverage[position][j], ALFA)
-									* pow(rate[position], BETA);
-						}
-						break;
+					if (pheromone_links[position][j] >= 0
+							and distance_links[position][j] >= 0) {
+						link_rate_sum
+								+= pow(pheromone_links[position][j], ALFA)
+										* pow(
+												greater_distance
+														- distance_links[position][j],
+												BETA);
 					}
 				}
 			}
@@ -192,28 +177,14 @@ void build_solutions(vector<Ant*> *vec) {
 			for (int j = 0; j < CITY_AMOUNT; j++) {
 				// Se a cidade já visitada, não entrar na análise
 				if (vec->at(i)->checkVisitIn(j) == false) {
-					switch (trail) {
-					case reference_ant.COST:
-						if (pheromone_cost[position][j] >= 0
-								and distance_links[position][j] >= 0) {
-							transition_probability[j] = (pow(
-									pheromone_cost[position][j], ALFA) * pow(
-									rate[position], BETA)) / link_rate_sum;
-						} else {
-							transition_probability[j] = 0;
-						}
-						break;
-					case reference_ant.COVERAGE:
-						if (pheromone_coverage[position][j] >= 0
-								and distance_links[position][j] >= 0) {
-							transition_probability[j] = (pow(
-									pheromone_coverage[position][j], ALFA)
-									* pow(rate[position], BETA))
-									/ link_rate_sum;
-						} else {
-							transition_probability[j] = 0;
-						}
-						break;
+					if (pheromone_links[position][j] >= 0
+							and distance_links[position][j] >= 0) {
+						transition_probability[j] = (pow(
+								pheromone_links[position][j], ALFA) * pow(
+								greater_distance - distance_links[position][j],
+								BETA)) / link_rate_sum;
+					} else {
+						transition_probability[j] = 0;
 					}
 				} else {
 					transition_probability[j] = 0;
@@ -237,10 +208,6 @@ void build_solutions(vector<Ant*> *vec) {
 						minor = major;
 					}
 				}
-			}
-
-			if (vec->at(i)->getTrailMode() == reference_ant.ALTERNATE) {
-				vec->at(i)->setLastTrail(trail);
 			}
 		}
 	}
@@ -333,8 +300,7 @@ void print_pheromone() {
 	for (int i = 0; i < CITY_AMOUNT; i++) {
 		temp += "{";
 		for (int j = 0; j < CITY_AMOUNT; j++) {
-			temp += "{" + number_to_String(pheromone_cost[i][j]) + ", "
-					+ number_to_String(pheromone_cost[i][j]) + "}";
+			temp += number_to_String(pheromone_links[i][j]);
 			if ((j + 1) != CITY_AMOUNT) {
 				temp += ", ";
 			}
