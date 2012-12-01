@@ -64,6 +64,7 @@ double variance = 0.0;
 double standard_deviation = 0.0;
 int greater_distance = INVALID;
 
+double calculate_time(clock_t start, clock_t end);
 void initialize_ants(vector<Ant*> *vec);
 void positioning_ants(vector<Ant*> *vec);
 void seed_initial_pheromone(bool random, double pheromone_rate, int intervals);
@@ -81,6 +82,7 @@ void calculate_metrics(vector<Ant*> *vec);
 void get_greater_distance();
 
 int main(int argc, char *argv[]) {
+	clock_t time_start = clock();
 	// Inicializando o gerador de números randômicos com um seed temporal
 	srand(time(0));
 	// Inicializar o contador de interações
@@ -111,9 +113,14 @@ int main(int argc, char *argv[]) {
 	// Imprimindo o resultado final
 	print_result();
 
+	cout << "Tempo de exec: " << calculate_time(time_start, clock()) << " ms"
+			<< endl;
 	//cin.get(); // aguarda por um novo caracter para então encerrar a aplicação
-
 	return 0;
+}
+
+double calculate_time(clock_t start, clock_t end) {
+	return 1000.0 * ((double) (end - start) / (double) CLOCKS_PER_SEC);
 }
 
 void initialize_ants(vector<Ant*> *vec) {
