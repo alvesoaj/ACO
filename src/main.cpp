@@ -345,7 +345,7 @@ string number_to_String(double n) {
 
 void calculate_metrics(vector<Ant*> *vec) {
 	// Calcular a média
-	int sum = 0;
+	double sum = 0;
 	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
 		sum += vec->at(i)->getRouteDistance();
 	}
