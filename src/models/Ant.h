@@ -15,7 +15,7 @@ using std::vector;
 class Ant {
 public:
 	// Construtor
-	Ant(int id, int len);
+	Ant(int id);
 	// Métodos
 	int getID();
 	double getQuality();

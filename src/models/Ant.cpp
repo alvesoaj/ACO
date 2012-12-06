@@ -8,7 +8,7 @@
 #include "Ant.h"
 
 // Implementação do construtor
-Ant::Ant(int id, int len) {
+Ant::Ant(int id) {
 	this->id = id;
 	this->routeDistance = 0;
 	this->quality = 0;
