@@ -6,14 +6,13 @@
  */
 
 // Importando bibliotecas necessárias
+#include <cstdlib> // Para gerar numeros randômicos
 #include <iostream>
-#include <vector> // Para fácil uso de vetores
 #include <string> // Para trabalhar fácil com strings
 #include <sstream> // Para trabalhar fácil com strings
 #include <math.h> // Para ajudar em calculos matemáticos
 #include <ctime>  // Para usar o time() e fornecer um bom seed para o random
-#include <cstdlib> // Para gerar numeros randômicos
-#include "models/Ant.h"
+using namespace std;
 
 // Constantes
 #define INVALID -1
@@ -23,21 +22,19 @@
 #define PHEROMONE_RATE 0.1
 #define ALFA 1
 #define BETA 2
-#define MAX_INTERATIONS 30
+#define MAX_ITERATIONS 30
 #define EVAPORATION_RATE 0.5
 #define POSITIVE_CONTS 0.75
 
-using namespace std;
-
 struct ant {
-	int id;
-	int routeDistance;
-	double quality;
-	vector<int> route;
+	double distance;
+	double fitness;
+	int position;
+	int route[CITY_AMOUNT];
 };
 
 // Variáveis
-vector<ant> ants;
+ant ants[POPULATION_SIZE];
 double pheromone_links[CITY_AMOUNT][CITY_AMOUNT];
 /*
  int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 7, 4, 3, 11, 1 }, {
@@ -59,61 +56,58 @@ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 11, 20, 27, 40, 43,
 				21, 21, 27, 30, 28, 7, 12, 27, 15, INVALID, 31, 37 }, { 30, 21,
 				13, 11, 16, 17, 13, 25, 23, 20, 35, 31, INVALID, 5 }, { 32, 24,
 				18, 17, 20, 20, 17, 30, 28, 23, 39, 37, 5, INVALID } };
-int bestDistance = INVALID;
-int worseDistance = INVALID;
-double bestSolution = 1000000000.0;
-double worseSolution = 0.0;
-vector<int> bestRoute;
-vector<int> worseRoute;
+int best_distance = 1000000000;
+int worse_distance = 0;
+double best_fitness;
+double worse_fitness;
+int best_route[CITY_AMOUNT];
+int worse_route[CITY_AMOUNT];
 double average = 0.0;
 double variance = 0.0;
 double standard_deviation = 0.0;
 int greater_distance = INVALID;
 
-double calculate_time(clock_t start, clock_t end);
-void initialize_ants(vector<Ant*> *vec);
-void positioning_ants(vector<Ant*> *vec);
-void seed_initial_pheromone(bool random, double pheromone_rate, int intervals);
-void build_solutions(vector<Ant*> *vec);
-void check_best_solution(vector<Ant*> *vec);
-double calculate_quality(int solution, int best_solution);
-int get_random_number(int from, int to);
+void init_ant(int index);
+void seed_initial_pheromone(bool random);
+void get_greater_distance();
+bool check_visit(int ant_index, int position);
+void build_solution();
+void check_best_distance();
+void calculate_fitness();
 void pheromone_evaporates();
-void update_pheromone(vector<Ant*> *vec);
-void print_route(int id, int distance, vector<int> vec);
+void update_pheromone();
+// Métodos auxiliares
+double calculate_time(clock_t start, clock_t end);
+int get_random_number(int from, int to);
+void print_route(int ant_index, int route[CITY_AMOUNT], double distance);
 void print_pheromone();
 string number_to_String(double n);
 void print_result();
-void calculate_metrics(vector<Ant*> *vec);
-void get_greater_distance();
+void calculate_metrics();
 
 int main(int argc, char *argv[]) {
 	clock_t time_start = clock();
 	// Inicializando o gerador de números randômicos com um seed temporal
 	srand(time(0));
 	// Inicializar o contador de interações
-	int interation = 0;
-	// Inicializando os objetos formigas
-	initialize_ants(&ants);
-	// Posicionando as formigas aleatoriamente
-	positioning_ants(&ants);
+	int iteration = 0;
+
 	// Configurando as concetrações iniciais de feromônio
-	seed_initial_pheromone(false, PHEROMONE_RATE, 0);
-	// seed_initial_pheromone(true, PHEROMONE_RATE, 10);
+	seed_initial_pheromone(false);
 	// Pegando a maior distância somado com 1
 	get_greater_distance();
 
-	while (interation < MAX_INTERATIONS) {
-		// Imprimindo a matriz de feromônio
-		// print_pheromone();
-		build_solutions(&ants);
-		check_best_solution(&ants);
-		update_pheromone(&ants);
-		for (unsigned int i = 0; i < ants.size(); i++) {
-			print_route(ants[i]->getID(), ants[i]->getRouteDistance(),
-					ants[i]->getRoute());
+	// Condição de parada
+	while (iteration < MAX_ITERATIONS) {
+		build_solution();
+		check_best_distance();
+		calculate_fitness();
+		pheromone_evaporates();
+		update_pheromone();
+		for (int i = 0; i < POPULATION_SIZE; i++) {
+			print_route(i, ants[i].route, ants[i].distance);
 		}
-		interation++;
+		iteration++;
 	}
 
 	// Imprimindo o resultado final
@@ -125,34 +119,26 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-double calculate_time(clock_t start, clock_t end) {
-	return 1000.0 * ((double) (end - start) / (double) CLOCKS_PER_SEC);
-}
-
-void initialize_ants(vector<Ant*> *vec) {
-	for (int i = 0; i < POPULATION_SIZE; i++) {
-		Ant *a = new Ant((i + 1), CITY_AMOUNT);
-		vec->push_back(a);
+void init_ant(int index) {
+	ants[index].distance = 0;
+	ants[index].fitness = 0;
+	ants[index].position = 0;
+	for (int j = 0; j < CITY_AMOUNT; j++) {
+		ants[index].route[j] = INVALID;
 	}
+	// Posicionando a formiga em uma cidade aleatória
+	int random_city = get_random_number(0, (CITY_AMOUNT - 1));
+	ants[index].route[0] = random_city;
 }
 
-void positioning_ants(vector<Ant*> *vec) {
-	for (unsigned int i = 0; i < vec->size(); i++) {
-		int random_city = get_random_number(0, (CITY_AMOUNT - 1));
-		vec->at(i)->addToRoute(random_city);
-	}
-}
-
-void seed_initial_pheromone(bool random, double pheromone_rate, int intervals) {
-	double pheromone_seed = pheromone_rate;
+void seed_initial_pheromone(bool random) {
 	for (int i = 0; i < CITY_AMOUNT; i++) {
 		for (int j = 0; j < CITY_AMOUNT; j++) {
 			if (i != j) {
-				if (random == true && intervals > 0) {
-					int rn = get_random_number(1, intervals);
-					pheromone_seed = pheromone_rate / rn;
-				}
-				pheromone_links[i][j] = pheromone_seed;
+				double random_pheromone = (double) get_random_number(0, 100)
+						/ 100.0;
+				pheromone_links[i][j] =
+						(random == true) ? random_pheromone : PHEROMONE_RATE;
 			} else {
 				pheromone_links[i][j] = INVALID;
 			}
@@ -160,21 +146,43 @@ void seed_initial_pheromone(bool random, double pheromone_rate, int intervals) {
 	}
 }
 
-void build_solutions(vector<Ant*> *vec) {
-	// Para cada formiga
-	for (unsigned int i = 0; i < vec->size(); i++) {
-		if (vec->at(i)->getRouteSize() > 1) {
-			vec->at(i)->restartSearch();
+void get_greater_distance() {
+	for (int i = 0; i < CITY_AMOUNT; i++) {
+		for (int j = 0; j < CITY_AMOUNT; j++) {
+			if (distance_links[i][j] > greater_distance) {
+				greater_distance = distance_links[i][j];
+			}
 		}
+	}
+	greater_distance += 1;
+}
+
+bool check_visit(int ant_index, int position) {
+	for (int i = 0; i < CITY_AMOUNT; i++) {
+		if (ants[ant_index].route[i] == position) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void build_solution() {
+	// Para cada formiga
+	for (int i = 0; i < POPULATION_SIZE; i++) {
+		// inicializando a formiga
+		init_ant(i);
+
 		// Enquanto não passar em todas as cidades
-		while (vec->at(i)->getRouteSize() < CITY_AMOUNT) {
-			int position = vec->at(i)->getPosition();
+		while (ants[i].position < CITY_AMOUNT) {
+			int position = ants[i].position;
+
 			double transition_probability[CITY_AMOUNT];
+
 			double link_rate_sum = 0;
 			// Somando as taxas de feromonio e heuristica
 			for (int j = 0; j < CITY_AMOUNT; j++) {
 				// Se a cidade já visitada, não entrar na análise
-				if (vec->at(i)->checkVisitIn(j) == false) {
+				if (check_visit(i, j) == false) {
 					if (pheromone_links[position][j] >= 0
 							and distance_links[position][j] >= 0) {
 						link_rate_sum += pow(pheromone_links[position][j], ALFA)
@@ -188,7 +196,7 @@ void build_solutions(vector<Ant*> *vec) {
 			// Calculando a probabilidade de transição
 			for (int j = 0; j < CITY_AMOUNT; j++) {
 				// Se a cidade já visitada, não entrar na análise
-				if (vec->at(i)->checkVisitIn(j) == false) {
+				if (check_visit(i, j) == false) {
 					if (pheromone_links[position][j] >= 0
 							and distance_links[position][j] >= 0) {
 						transition_probability[j] = (pow(
@@ -203,20 +211,24 @@ void build_solutions(vector<Ant*> *vec) {
 				} else {
 					transition_probability[j] = 0;
 				}
+
+				cout << transition_probability[j] << endl;
 			}
+
 			// fazendo a roleta
 			double roulette = (double) get_random_number(0, 100) / 100.0;
 			double minor = 0;
 			double major = 0;
+
 			// Selecionando o próximo nó
-			for (unsigned int j = 0; j < sizeof(transition_probability); j++) {
+			for (int j = 0; j < CITY_AMOUNT; j++) {
 				// Se a cidade já visitada, não entrar na análise
-				if (vec->at(i)->checkVisitIn(j) == false) {
+				if (check_visit(i, j) == false) {
 					major += transition_probability[j];
 					if (roulette >= minor and roulette <= major) {
-						vec->at(i)->addToRoute(j);
-						vec->at(i)->incraseRouteDistance(
-								distance_links[position][j]);
+						ants[i].route[position + 1] = j;
+						ants[i].distance += distance_links[position][j];
+						ants[i].position += 1;
 						break;
 					} else {
 						minor = major;
@@ -227,39 +239,32 @@ void build_solutions(vector<Ant*> *vec) {
 	}
 }
 
-void check_best_solution(vector<Ant*> *vec) {
-	if (vec->size() > 0) {
-		if (bestDistance == INVALID and worseDistance == INVALID) {
-			bestDistance = vec->at(0)->getRouteDistance();
-			bestRoute = vec->at(0)->getRoute();
-
-			worseDistance = vec->at(POPULATION_SIZE - 1)->getRouteDistance();
-			worseRoute = vec->at(POPULATION_SIZE - 1)->getRoute();
-		}
-		for (int i = 0; i < POPULATION_SIZE; i++) {
-			if (vec->at(i)->getRouteDistance() < bestDistance) {
-				bestDistance = vec->at(i)->getRouteDistance();
-				bestRoute = vec->at(i)->getRoute();
-			} else if (vec->at(i)->getRouteDistance() > worseDistance) {
-				worseDistance = vec->at(i)->getRouteDistance();
-				worseRoute = vec->at(i)->getRoute();
+void check_best_distance() {
+	for (int i = 0; i < POPULATION_SIZE; i++) {
+		if (ants[i].distance < best_distance) {
+			best_distance = ants[i].distance;
+			for (int j = 0; j < CITY_AMOUNT; j++) {
+				best_route[j] = ants[i].route[j];
 			}
-		}
-		for (int i = 0; i < POPULATION_SIZE; i++) {
-			double quality = calculate_quality(vec->at(i)->getRouteDistance(),
-					bestDistance);
-			if (quality < bestSolution) {
-				bestSolution = quality;
-			} else if (quality > worseSolution) {
-				worseSolution = quality;
+		} else if (ants[i].distance > worse_distance) {
+			worse_distance = ants[i].distance;
+			for (int j = 0; j < CITY_AMOUNT; j++) {
+				worse_route[j] = ants[i].route[j];
 			}
-			vec->at(i)->setQuality(quality);
 		}
 	}
 }
 
-double calculate_quality(int solution, int best_solution) {
-	return (double) (1 * solution) / (double) best_solution;
+void calculate_fitness() {
+	for (int i = 0; i < POPULATION_SIZE; i++) {
+		double fitness = (double) ants[i].distance / (double) best_distance;
+		if (fitness < best_fitness) {
+			best_fitness = fitness;
+		} else if (fitness > worse_fitness) {
+			worse_fitness = fitness;
+		}
+		ants[i].fitness = fitness;
+	}
 }
 
 void pheromone_evaporates() {
@@ -273,34 +278,33 @@ void pheromone_evaporates() {
 	}
 }
 
-void update_pheromone(vector<Ant*> *vec) {
-	pheromone_evaporates();
+void update_pheromone() {
 	for (int i = 0; i < POPULATION_SIZE; i++) {
-		double pheromone_to_sum = POSITIVE_CONTS / vec->at(i)->getQuality();
-		vector<int> route = vec->at(i)->getRoute();
-		for (int j = 0; j < (vec->at(i)->getRouteSize() - 1); j++) {
-			int lower = route.at(j);
-			int uper = route.at(j + 1);
-			if (pheromone_links[lower][uper] != INVALID) {
-				pheromone_links[lower][uper] += pheromone_to_sum;
+		double pheromone_to_sum = POSITIVE_CONTS / ants[i].fitness;
+		for (int j = 0; j < (CITY_AMOUNT - 1); j++) {
+			int city = ants[i].route[j];
+			int next_city = ants[i].route[j + 1];
+			if (pheromone_links[city][next_city] != INVALID) {
+				pheromone_links[city][next_city] += pheromone_to_sum;
 			}
 		}
 	}
 }
 
+// Métodos auxiliares
 int get_random_number(int from, int to) {
-	if (from < to) {
-		return (rand() % to) + from;
-	} else {
-		return 0;
-	}
+	return (from < to) ? (rand() % to) + from : 0;
 }
 
-void print_route(int id, int distance, vector<int> vec) {
-	string temp = "Rota da formiga " + number_to_String(id) + " : ";
-	for (unsigned int i = 0; i < vec.size(); i++) {
-		temp += number_to_String(vec.at(i));
-		if ((i + 1) != vec.size()) {
+double calculate_time(clock_t start, clock_t end) {
+	return 1000.0 * ((double) (end - start) / (double) CLOCKS_PER_SEC);
+}
+
+void print_route(int ant_index, int route[CITY_AMOUNT], double distance) {
+	string temp = "Rota da formiga " + number_to_String(ant_index) + " : ";
+	for (unsigned int i = 0; i < CITY_AMOUNT; i++) {
+		temp += number_to_String(route[i]);
+		if ((i + 1) != CITY_AMOUNT) {
 			temp += ", ";
 		}
 	}
@@ -331,14 +335,14 @@ void print_pheromone() {
 
 void print_result() {
 	cout << "Pior resultado:" << endl;
-	cout << "f(x):" << worseSolution << endl;
-	print_route(0, worseDistance, worseRoute);
+	cout << "f(x):" << worse_fitness << endl;
+	print_route(0, worse_route, worse_distance);
 
 	cout << "Melhor resultado:" << endl;
-	cout << "f(x):" << bestSolution << endl;
-	print_route(0, bestDistance, bestRoute);
+	cout << "f(x):" << best_fitness << endl;
+	print_route(0, best_route, best_distance);
 
-	calculate_metrics(&ants);
+	calculate_metrics();
 	cout << "Média:" << average << endl;
 	cout << "Variância:" << variance << endl;
 	cout << "Desvio padrão:" << standard_deviation << endl;
@@ -350,30 +354,19 @@ string number_to_String(double n) {
 	return out.str();
 }
 
-void calculate_metrics(vector<Ant*> *vec) {
+void calculate_metrics() {
 	// Calcular a média
 	double sum = 0;
-	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
-		sum += vec->at(i)->getRouteDistance();
+	for (int i = 0; i < POPULATION_SIZE; i++) {
+		sum += ants[i].distance;
 	}
 	average = (double) sum / (double) POPULATION_SIZE;
 	// Calcuar a variância
 	sum = 0;
-	for (unsigned int i = 0; i < POPULATION_SIZE; i++) {
-		sum += pow(vec->at(i)->getRouteDistance() - average, 2);
+	for (int i = 0; i < POPULATION_SIZE; i++) {
+		sum += pow(ants[i].distance - average, 2);
 	}
 	variance = (double) sum / (double) POPULATION_SIZE;
 	// Calculando o desvio padrão
 	standard_deviation = pow(variance, 0.5);
-}
-
-void get_greater_distance() {
-	for (int i = 0; i < CITY_AMOUNT; i++) {
-		for (int j = 0; j < CITY_AMOUNT; j++) {
-			if (distance_links[i][j] > greater_distance) {
-				greater_distance = distance_links[i][j];
-			}
-		}
-	}
-	greater_distance += 1;
 }
