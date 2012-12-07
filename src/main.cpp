@@ -46,16 +46,17 @@ int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 11, 20, 27, 40, 43,
 		39, 28, 18, 10, 18, 30, 30, 32 }, { 11, INVALID, 9, 16, 29, 32, 28, 19,
 		11, 4, 17, 23, 21, 24 }, { 20, 9, INVALID, 7, 20, 22, 19, 15, 10, 11,
 		21, 21, 13, 18 }, { 27, 16, 7, INVALID, 13, 16, 12, 13, 13, 18, 26, 21,
-		11, 17 }, { 40, 29, 20, 13, INVALID, 3, 2, 21, 25, 31, 38, 27, 16, 20 },
-		{ 43, 32, 22, 16, 3, INVALID, 4, 23, 28, 33, 41, 30, 17, 20 }, { 39, 28,
-				19, 12, 2, 4, INVALID, 22, 25, 29, 38, 28, 13, 17 }, { 28, 19,
-				15, 13, 21, 23, 22, INVALID, 9, 22, 18, 7, 25, 30 }, { 18, 11,
-				10, 13, 25, 28, 25, 9, INVALID, 13, 12, 12, 23, 28 }, { 10, 4,
-				11, 18, 31, 33, 29, 22, 13, INVALID, 20, 27, 20, 23 }, { 18, 17,
-				21, 26, 38, 41, 38, 18, 12, 20, INVALID, 15, 35, 39 }, { 30, 23,
-				21, 21, 27, 30, 28, 7, 12, 27, 15, INVALID, 31, 37 }, { 30, 21,
-				13, 11, 16, 17, 13, 25, 23, 20, 35, 31, INVALID, 5 }, { 32, 24,
-				18, 17, 20, 20, 17, 30, 28, 23, 39, 37, 5, INVALID } };
+		11, 17 },
+		{ 40, 29, 20, 13, INVALID, 3, 2, 21, 25, 31, 38, 27, 16, 20 }, { 43,
+				32, 22, 16, 3, INVALID, 4, 23, 28, 33, 41, 30, 17, 20 }, { 39,
+				28, 19, 12, 2, 4, INVALID, 22, 25, 29, 38, 28, 13, 17 }, { 28,
+				19, 15, 13, 21, 23, 22, INVALID, 9, 22, 18, 7, 25, 30 }, { 18,
+				11, 10, 13, 25, 28, 25, 9, INVALID, 13, 12, 12, 23, 28 }, { 10,
+				4, 11, 18, 31, 33, 29, 22, 13, INVALID, 20, 27, 20, 23 }, { 18,
+				17, 21, 26, 38, 41, 38, 18, 12, 20, INVALID, 15, 35, 39 }, {
+				30, 23, 21, 21, 27, 30, 28, 7, 12, 27, 15, INVALID, 31, 37 }, {
+				30, 21, 13, 11, 16, 17, 13, 25, 23, 20, 35, 31, INVALID, 5 }, {
+				32, 24, 18, 17, 20, 20, 17, 30, 28, 23, 39, 37, 5, INVALID } };
 int best_distance = 1000000000;
 int worse_distance = 0;
 double best_fitness;
@@ -137,8 +138,8 @@ void seed_initial_pheromone(bool random) {
 			if (i != j) {
 				double random_pheromone = (double) get_random_number(0, 100)
 						/ 100.0;
-				pheromone_links[i][j] =
-						(random == true) ? random_pheromone : PHEROMONE_RATE;
+				pheromone_links[i][j] = (random == true) ? random_pheromone
+						: PHEROMONE_RATE;
 			} else {
 				pheromone_links[i][j] = INVALID;
 			}
@@ -173,7 +174,7 @@ void build_solution() {
 		init_ant(i);
 
 		// Enquanto não passar em todas as cidades
-		while (ants[i].position < CITY_AMOUNT) {
+		while (ants[i].position < (CITY_AMOUNT - 1)) {
 			int position = ants[i].position;
 
 			double transition_probability[CITY_AMOUNT];
@@ -185,11 +186,12 @@ void build_solution() {
 				if (check_visit(i, j) == false) {
 					if (pheromone_links[position][j] >= 0
 							and distance_links[position][j] >= 0) {
-						link_rate_sum += pow(pheromone_links[position][j], ALFA)
-								* pow(
-										greater_distance
-												- distance_links[position][j],
-										BETA);
+						link_rate_sum
+								+= pow(pheromone_links[position][j], ALFA)
+										* pow(
+												greater_distance
+														- distance_links[position][j],
+												BETA);
 					}
 				}
 			}
@@ -200,19 +202,15 @@ void build_solution() {
 					if (pheromone_links[position][j] >= 0
 							and distance_links[position][j] >= 0) {
 						transition_probability[j] = (pow(
-								pheromone_links[position][j], ALFA)
-								* pow(
-										greater_distance
-												- distance_links[position][j],
-										BETA)) / link_rate_sum;
+								pheromone_links[position][j], ALFA) * pow(
+								greater_distance - distance_links[position][j],
+								BETA)) / link_rate_sum;
 					} else {
 						transition_probability[j] = 0;
 					}
 				} else {
 					transition_probability[j] = 0;
 				}
-
-				cout << transition_probability[j] << endl;
 			}
 
 			// fazendo a roleta
