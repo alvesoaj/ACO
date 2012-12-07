@@ -41,6 +41,7 @@ double pheromone_links[CITY_AMOUNT][CITY_AMOUNT];
  7, INVALID, 2, 8, 10, 8 }, { 4, 2, INVALID, 9, 9, 3 }, { 3, 8, 9,
  INVALID, 5, 4 }, { 11, 10, 9, 5, INVALID, 3 },
  { 1, 8, 3, 4, 3, INVALID } };
+
  */
 int distance_links[CITY_AMOUNT][CITY_AMOUNT] = { { INVALID, 11, 20, 27, 40, 43,
 		39, 28, 18, 10, 18, 30, 30, 32 }, { 11, INVALID, 9, 16, 29, 32, 28, 19,
@@ -114,8 +115,8 @@ int main(int argc, char *argv[]) {
 	// Imprimindo o resultado final
 	print_result();
 
-	cout << "Tempo de exec: " << calculate_time(time_start, clock()) << " ms"
-			<< endl;
+	cout << "\nTempo de execução (ACO): "
+			<< calculate_time(time_start, clock()) << " ms" << endl;
 	//cin.get(); // aguarda por um novo caracter para então encerrar a aplicação
 	return 0;
 }
